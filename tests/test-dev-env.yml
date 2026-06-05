@@ -1,0 +1,29 @@
+name: Test DEV_ENV deployment scenario
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
+          DEV_ENV: "my-dev-env"
+          SRC_PATH: "."
+          REMOTE_PATH: ""
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          PHP_LINT: "false"
+          CACHE_CLEAR: "true"
+      - name: Assert action was invoked
+        run: |
+          echo "outcome: ${{ steps.action.outcome }}"
+          # The action will fail because there's no real SSH key/WP Engine env,
+          # but it should have been invoked (outcome is 'failure', not 'skipped').
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action was invoked (outcome=${{ steps.action.outcome }})"
