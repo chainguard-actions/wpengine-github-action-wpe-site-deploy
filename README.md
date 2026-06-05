@@ -1,1 +1,15 @@
-# wpengine-github-action-wpe-site-deploy
+# wpengine/github-action-wpe-site-deploy
+
+Deploy WordPress projects to a WP Engine account using SSH Gateway
+
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/wpengine/github-action-wpe-site-deploy](https://github.com/wpengine/github-action-wpe-site-deploy).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v3.2.9 | [`v3.2.9`](https://github.com/chainguard-actions/wpengine-github-action-wpe-site-deploy/tree/v3.2.9) | [`7bdbfb6`](https://github.com/wpengine/github-action-wpe-site-deploy/commit/7bdbfb62eb657ae92afb91cb889d9c3fb36ef6c0) |
+
+## Privacy
+
+This Action contacts Chainguard's licensing server to verify authorization. Connection metadata (IP address, GitHub repository identifier, timestamp, and any metadata encoded in the auth token) is transmitted to Chainguard, Inc. even if authorization is denied in accordance with our [Privacy Notice](https://www.chainguard.dev/legal/privacy-notice)
