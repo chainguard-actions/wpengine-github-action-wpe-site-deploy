@@ -1,4 +1,4 @@
-name: Test script input
+name: Test environment-specific inputs
 on:
   workflow_dispatch:
 jobs:
@@ -6,19 +6,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - id: action
+      - id: action-prd
         uses: .
         continue-on-error: true
         with:
           WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
-          WPE_ENV: "mysite"
-          SCRIPT: "post-deploy.sh"
+          PRD_ENV: "mysite-prd"
+          STG_ENV: "mysite-stg"
+          DEV_ENV: "mysite-dev"
           FLAGS: '-azvr --inplace --exclude=".*"'
           CACHE_CLEAR: "false"
       - name: Assert action ran (expected to fail without real credentials)
         run: |
-          echo "Action outcome: ${{ steps.action.outcome }}"
-          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+          echo "Action outcome: ${{ steps.action-prd.outcome }}"
+          if [ "${{ steps.action-prd.outcome }}" = "skipped" ]; then
             echo "FAIL: action was skipped unexpectedly"
             exit 1
           fi

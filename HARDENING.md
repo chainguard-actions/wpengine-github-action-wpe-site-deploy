@@ -14,11 +14,11 @@ Action **wpengine--github-action-wpe-site-deploy/v3.2.9** was hardened automatic
 
 ### unpinned-uses (severity: high)
 
-The action uses `runs.using: docker` with `image: docker://wpengine/site-deploy:1.0.7`. This references a mutable Docker image tag (`1.0.7`) rather than an immutable SHA digest (e.g., `docker://wpengine/site-deploy@sha256:<64-hex-digest>`). A mutable tag can be silently overwritten with a malicious image, creating a supply-chain attack vector.
+The action uses a Docker image reference with a mutable version tag instead of an immutable SHA digest. `image: docker://wpengine/site-deploy:1.0.7` should be pinned to a SHA256 digest (e.g., `docker://wpengine/site-deploy@sha256:<64-hex-char-digest>`) to prevent supply-chain attacks where the tag could be silently overwritten with malicious content.
 
 Locations:
 
-- `action.yml:48`
+- `action.yml:46`
 
 ## Iteration Notes
 
@@ -28,5 +28,5 @@ Locations:
 
 **Notes:**
 
-Replaced the mutable Docker image tag `docker://wpengine/site-deploy:1.0.7` with the immutable digest `docker://wpengine/site-deploy@sha256:dffc860dbbaeac16be910d52c3a5c7890e71f0deceb13b586b9705e02463d114 # 1.0.7` in action.yml line 48. This pins the image to an exact, immutable version and prevents supply-chain attacks via tag mutation.
+Pinned the Docker image `wpengine/site-deploy:1.0.7` to its immutable SHA256 digest `sha256:dffc860dbbaeac16be910d52c3a5c7890e71f0deceb13b586b9705e02463d114` in action.yml line 46. The original tag is preserved as a comment for readability: `docker://wpengine/site-deploy@sha256:dffc860dbbaeac16be910d52c3a5c7890e71f0deceb13b586b9705e02463d114 # 1.0.7`.
 

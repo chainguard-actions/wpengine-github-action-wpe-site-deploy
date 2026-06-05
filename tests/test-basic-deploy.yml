@@ -1,4 +1,4 @@
-name: Test script input
+name: Test basic deploy inputs
 on:
   workflow_dispatch:
 jobs:
@@ -12,9 +12,11 @@ jobs:
         with:
           WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
           WPE_ENV: "mysite"
-          SCRIPT: "post-deploy.sh"
           FLAGS: '-azvr --inplace --exclude=".*"'
+          PHP_LINT: "false"
           CACHE_CLEAR: "false"
+          SRC_PATH: "."
+          REMOTE_PATH: ""
       - name: Assert action ran (expected to fail without real credentials)
         run: |
           echo "Action outcome: ${{ steps.action.outcome }}"
