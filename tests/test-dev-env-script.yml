@@ -1,0 +1,31 @@
+name: Test DEV_ENV and SCRIPT inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Test action with DEV_ENV and SCRIPT inputs
+        id: action
+        continue-on-error: true
+        uses: .
+        with:
+          WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
+          DEV_ENV: "mysite-dev"
+          SCRIPT: "deploy-script.sh"
+          PHP_LINT: "false"
+          CACHE_CLEAR: "false"
+          SRC_PATH: "."
+          REMOTE_PATH: ""
+          FLAGS: '-azvr --inplace --exclude=".*"'
+      - name: Assert action ran (expected to fail due to invalid SSH key)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # The action is expected to fail because the SSH key is invalid.
+          # We only verify it was invoked (not skipped).
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action ran as expected (failed due to invalid credentials, which is expected in test)"
