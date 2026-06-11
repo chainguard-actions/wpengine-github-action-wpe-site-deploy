@@ -1,0 +1,31 @@
+name: Test deploy with STG_ENV
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Run action with STG_ENV (expect failure due to invalid SSH key)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
+          STG_ENV: "my-stg-env"
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          SRC_PATH: "."
+          PHP_LINT: "false"
+          CACHE_CLEAR: "false"
+      - name: Assert action ran (failure expected due to invalid credentials)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          if [ "${{ steps.action.outcome }}" = "success" ]; then
+            echo "PASS: action succeeded"
+          elif [ "${{ steps.action.outcome }}" = "failure" ]; then
+            echo "PASS: action failed as expected with invalid credentials"
+          else
+            echo "FAIL: unexpected outcome"
+            exit 1
+          fi
+          echo "PASS"

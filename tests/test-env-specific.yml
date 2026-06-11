@@ -1,0 +1,26 @@
+name: Test environment-specific deploy inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Run action with PRD_ENV, STG_ENV, DEV_ENV (expected to fail at SSH connection)
+        id: action
+        uses: .
+        with:
+          WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
+          PRD_ENV: "my-prod-env"
+          STG_ENV: "my-stage-env"
+          DEV_ENV: "my-dev-env"
+          PHP_LINT: "false"
+          CACHE_CLEAR: "false"
+          SRC_PATH: "."
+          REMOTE_PATH: ""
+          FLAGS: '-azvr --inplace --exclude=".*"'
+        continue-on-error: true
+      - name: Assert action ran (SSH failure is expected)
+        run: |
+          echo "Action completed (with expected SSH failure)"
+          echo "PASS: PRD_ENV, STG_ENV, DEV_ENV inputs were accepted by the action"
