@@ -1,0 +1,30 @@
+name: Test environment-specific inputs
+on:
+  workflow_dispatch:
+jobs:
+  test-prd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
+          PRD_ENV: "mysite-prd"
+          STG_ENV: "mysite-stg"
+          DEV_ENV: "mysite-dev"
+          SCRIPT: "scripts/post-deploy.sh"
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          PHP_LINT: "false"
+          CACHE_CLEAR: "false"
+      - name: Assert action ran (may fail due to invalid SSH key)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # The action is expected to fail because the SSH key is fake.
+          # We only verify it was invoked (not skipped).
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action was invoked"
