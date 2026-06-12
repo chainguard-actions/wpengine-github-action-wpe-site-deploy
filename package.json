@@ -1,0 +1,16 @@
+{
+  "name": "@wpengine/github-action-wpe-site-deploy",
+  "version": "3.2.6",
+  "private": true,
+  "engines": {
+    "node": ">=20",
+    "npm": ">=9"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@changesets/cli": "^2.26.2"
+  },
+  "scripts": {
+    "version": "changeset version && npm install --package-lock-only"
+  }
+}
