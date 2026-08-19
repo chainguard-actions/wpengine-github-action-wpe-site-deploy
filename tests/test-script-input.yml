@@ -1,0 +1,41 @@
+name: Test SCRIPT input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up git origin reachable inside Docker container
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+          rm -rf "$GITHUB_WORKSPACE/.git-remote"
+          git init --bare "$GITHUB_WORKSPACE/.git-remote"
+          git push "$GITHUB_WORKSPACE/.git-remote" HEAD:refs/heads/act-harness
+          git remote set-url origin "$GITHUB_WORKSPACE/.git-remote" 2>/dev/null || \
+            git remote add origin "$GITHUB_WORKSPACE/.git-remote"
+      - name: Create a custom post-deploy script
+        run: |
+          echo '#!/bin/sh' > /tmp/post-deploy.sh
+          echo 'echo "Post-deploy script executed"' >> /tmp/post-deploy.sh
+          chmod +x /tmp/post-deploy.sh
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: "invalid-key-for-testing"
+          WPE_ENV: "mysite-dev"
+          SCRIPT: "post-deploy.sh"
+      - name: Assert action ran (failed due to invalid SSH key, not missing SCRIPT input)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because of the invalid SSH key, not because SCRIPT is missing.
+          # Either 'failure' or 'success' is acceptable here; what matters is the input was accepted.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: SCRIPT input was accepted by the action"

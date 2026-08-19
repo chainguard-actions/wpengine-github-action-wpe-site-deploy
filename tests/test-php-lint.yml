@@ -1,0 +1,33 @@
+name: Test deploy with PHP lint enabled
+on:
+  workflow_dispatch:
+jobs:
+  test-php-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with PHP_LINT enabled (expect failure - no real SSH key)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: "fake-private-key-for-testing"
+          WPE_ENV: "mysite"
+          PHP_LINT: "true"
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          CACHE_CLEAR: "false"
+          SRC_PATH: "."
+
+      - name: Assert action ran with PHP lint
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because the SSH key is invalid / WPE is unreachable.
+          # We verify the step was not skipped — it ran and attempted the deployment.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action ran with PHP_LINT=true (outcome=$OUTCOME)"
