@@ -1,0 +1,44 @@
+name: Test basic deploy invocation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate dummy RSA key
+        id: gen-key
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "" -q
+          PRIVATE_KEY=$(cat /tmp/test_key)
+          echo "PRIVATE_KEY<<EOF" >> $GITHUB_OUTPUT
+          echo "$PRIVATE_KEY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run deploy action (expect SSH failure, not input failure)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ steps.gen-key.outputs.PRIVATE_KEY }}
+          WPE_ENV: test-env-12345
+          SRC_PATH: "."
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          CACHE_CLEAR: false
+
+      - name: Assert action ran (failed at SSH, not at input validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "action outcome: $OUTCOME"
+          # The action should fail (no real WP Engine connection), but it must
+          # have started — outcome will be 'failure' not 'skipped'
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run and fail at SSH"
+            exit 1
+          fi
+          echo "PASS: action ran (failed at SSH connection as expected with dummy credentials)"

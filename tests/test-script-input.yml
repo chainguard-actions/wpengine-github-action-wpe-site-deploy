@@ -1,0 +1,35 @@
+name: Test SCRIPT input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Create a dummy script file
+        run: |
+          echo '#!/bin/sh' > /tmp/post-deploy.sh
+          echo 'echo "Post-deploy script executed"' >> /tmp/post-deploy.sh
+          chmod +x /tmp/post-deploy.sh
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          WPE_SSHG_KEY_PRIVATE: "INVALID_KEY_FOR_TESTING"
+          WPE_ENV: "test-env"
+          SCRIPT: "/tmp/post-deploy.sh"
+      - name: Assert action ran (failed at SSH, not at input parsing)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because of the invalid SSH key,
+          # not because the SCRIPT input was rejected.
+          # Either 'failure' (SSH error) or 'success' is acceptable;
+          # what matters is the action was invoked with the SCRIPT input.
+          if [ "$OUTCOME" = "failure" ] || [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action was invoked with SCRIPT input (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi

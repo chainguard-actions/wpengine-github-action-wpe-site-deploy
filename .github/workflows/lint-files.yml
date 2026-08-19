@@ -1,0 +1,24 @@
+---
+name: Lint GHA Files
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Lint files
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - run: echo "Running shell script lint!"
+      - run: find . -name "*.sh" -type f | xargs -I {} shellcheck --severity=error {}
+      - run: echo "Running yml file lint!"
+      - run: find . -name "*.yml" -type f | xargs -I {} yamllint {}
