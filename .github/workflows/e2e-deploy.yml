@@ -1,0 +1,48 @@
+name: Test e2e Deploy to WP Engine
+on:
+  schedule:
+    - cron: '*/60 * * * *'
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-main
+  cancel-in-progress: false
+
+jobs:
+  run_action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Bump test plugin version number
+        run: sed -i 's/0.0.1/0.0.2/' tests/data/plugins/test-plugin/test-plugin.php
+      - name: GitHub Action Deploy to WP Engine
+        uses: ./
+        with:
+          # Deploy vars
+          WPE_SSHG_KEY_PRIVATE: ${{ secrets.WPE_SSHG_KEY_PRIVATE }}
+          WPE_ENV: ghae2e
+          # Deploy Options
+          SRC_PATH: "tests/data/plugins/test-plugin"
+          REMOTE_PATH: "wp-content/plugins/"
+          PHP_LINT: true
+          FLAGS: -r --backup --backup-dir=/tmp --itemize-changes
+          SCRIPT: "tests/data/post-deploy/test-plugin.sh"
+          CACHE_CLEAR: true
+      - name: Fetch deploy results
+        id: fetchResult
+        uses: fjogeleit/http-request-action@c0b95d02a088b47c1f2f4db04fd8af8bd19eee54 # v1
+        with:
+          url: "https://ghae2e.wpengine.com/wp-content/plugins/test-plugin/status.json"
+      - name: Validate deploy results
+        env:
+          RESPONSE: ${{ fromJson(steps.fetchResult.outputs.response).status }}
+        run: |
+          [ "$RESPONSE" = "success" ] || exit 1

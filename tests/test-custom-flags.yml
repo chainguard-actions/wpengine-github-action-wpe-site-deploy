@@ -1,8 +1,8 @@
-name: Test basic deploy invocation
+name: Test custom FLAGS and REMOTE_PATH inputs
 on:
   workflow_dispatch:
 jobs:
-  test-basic:
+  test-custom-flags:
     runs-on: ubuntu-latest
     env:
       GITHUB_REF: refs/heads/main
@@ -19,26 +19,26 @@ jobs:
           echo "$PRIVATE_KEY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Run action (expect SSH failure, not input validation failure)
+      - name: Run action with custom FLAGS and REMOTE_PATH
         id: action
         uses: .
         continue-on-error: true
         with:
           WPE_SSHG_KEY_PRIVATE: ${{ steps.gen-key.outputs.PRIVATE_KEY }}
           WPE_ENV: test-env-placeholder
-          PHP_LINT: "false"
-          CACHE_CLEAR: "false"
+          FLAGS: '-azvr --inplace --exclude=".*" --exclude="node_modules"'
+          REMOTE_PATH: "wp-content/themes/my-theme"
           SRC_PATH: "."
+          PHP_LINT: "false"
+          CACHE_CLEAR: "true"
 
-      - name: Assert action ran (failed at SSH, not at input validation)
+      - name: Assert action ran with custom flags
         env:
           OUTCOME: ${{ steps.action.outcome }}
         run: |
           echo "action outcome: $OUTCOME"
-          # The action should fail (SSH will not connect to a real WPE env)
-          # but it should NOT be skipped — it must have actually run
           if [ "$OUTCOME" = "skipped" ]; then
-            echo "FAIL: action was skipped, expected it to run (and fail at SSH)"
+            echo "FAIL: action was skipped, expected it to run"
             exit 1
           fi
-          echo "PASS: action ran (outcome=$OUTCOME, expected failure at SSH stage)"
+          echo "PASS: action ran with custom FLAGS and REMOTE_PATH (outcome=$OUTCOME)"

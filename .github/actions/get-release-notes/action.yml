@@ -1,0 +1,26 @@
+name: Get release notes
+description: Retrieves the release notes for a given version from the changelog.
+inputs:
+  version:
+    description: "Which version's release notes to retrieve."
+    required: true
+  changelog:
+    description: "Path to the changelog."
+    required: true
+outputs:
+  release_notes:
+    description: "Release notes parsed from the changelog."
+    value: ${{ steps.notes.outputs.RELEASE_NOTES }}
+runs:
+  using: 'composite'
+  steps:
+    - id: notes
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_CHANGELOG: ${{ inputs.changelog }}
+      run: |
+          notes=$(node "$ACTION_PATH/getReleaseNotes" "$INPUT_VERSION" "$INPUT_CHANGELOG")
+          safe=$(printf '%s' "$notes" | tr -d '\n\r')
+          echo "RELEASE_NOTES=$safe" >> "$GITHUB_OUTPUT"
+      shell: bash
