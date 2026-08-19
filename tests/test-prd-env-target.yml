@@ -1,0 +1,40 @@
+name: Test with PRD_ENV production environment target
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate dummy RSA key for testing
+        id: gen-key
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "" -q
+          PRIVATE_KEY=$(cat /tmp/test_key)
+          echo "PRIVATE_KEY<<EOF" >> $GITHUB_OUTPUT
+          echo "$PRIVATE_KEY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run action targeting PRD_ENV (expect failure due to invalid credentials)
+        id: action
+        continue-on-error: true
+        uses: .
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ steps.gen-key.outputs.PRIVATE_KEY }}
+          PRD_ENV: my-prod-site
+          SRC_PATH: "."
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          CACHE_CLEAR: "true"
+
+      - name: Assert action failed (cannot connect with dummy key)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with invalid SSH key, got '$OUTCOME'"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when targeting PRD_ENV with invalid SSH key"

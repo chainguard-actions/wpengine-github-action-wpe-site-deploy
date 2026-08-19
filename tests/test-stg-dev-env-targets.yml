@@ -1,0 +1,62 @@
+name: Test with STG_ENV and DEV_ENV environment targets
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate dummy RSA key for testing
+        id: gen-key
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "" -q
+          PRIVATE_KEY=$(cat /tmp/test_key)
+          echo "PRIVATE_KEY<<EOF" >> $GITHUB_OUTPUT
+          echo "$PRIVATE_KEY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run action targeting STG_ENV (expect failure due to invalid credentials)
+        id: action-stg
+        continue-on-error: true
+        uses: .
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ steps.gen-key.outputs.PRIVATE_KEY }}
+          STG_ENV: my-staging-site
+          SRC_PATH: "."
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          CACHE_CLEAR: "false"
+
+      - name: Assert STG_ENV action failed (cannot connect with dummy key)
+        env:
+          OUTCOME: ${{ steps.action-stg.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with invalid SSH key for STG_ENV, got '$OUTCOME'"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when targeting STG_ENV with invalid SSH key"
+
+      - name: Run action targeting DEV_ENV (expect failure due to invalid credentials)
+        id: action-dev
+        continue-on-error: true
+        uses: .
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ steps.gen-key.outputs.PRIVATE_KEY }}
+          DEV_ENV: my-dev-site
+          SRC_PATH: "."
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          CACHE_CLEAR: "false"
+
+      - name: Assert DEV_ENV action failed (cannot connect with dummy key)
+        env:
+          OUTCOME: ${{ steps.action-dev.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with invalid SSH key for DEV_ENV, got '$OUTCOME'"
+            exit 1
+          fi
+          echo "PASS: action correctly failed when targeting DEV_ENV with invalid SSH key"

@@ -46,7 +46,7 @@ inputs:
 
 runs:
   using: "docker"
-  image: docker://wpengine/site-deploy@sha256:d976bb339d9443a7016ad26ae9d553535969d50cdd23918ec1d49ba1ba061b85 # 1.0.4
+  image: docker://wpengine/site-deploy:1.0.4@sha256:d976bb339d9443a7016ad26ae9d553535969d50cdd23918ec1d49ba1ba061b85
   env:
     WPE_SSHG_KEY_PRIVATE: ${{ inputs.WPE_SSHG_KEY_PRIVATE }}
     WPE_ENV: ${{ inputs.WPE_ENV }}

@@ -1,0 +1,42 @@
+name: Test with REMOTE_PATH and SCRIPT inputs
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Generate dummy RSA key for testing
+        id: gen-key
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "" -q
+          PRIVATE_KEY=$(cat /tmp/test_key)
+          echo "PRIVATE_KEY<<EOF" >> $GITHUB_OUTPUT
+          echo "$PRIVATE_KEY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run action with REMOTE_PATH and SCRIPT (expect failure due to invalid credentials)
+        id: action
+        continue-on-error: true
+        uses: .
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ steps.gen-key.outputs.PRIVATE_KEY }}
+          WPE_ENV: test-site-env
+          SRC_PATH: "."
+          REMOTE_PATH: "wp-content/themes/my-theme"
+          FLAGS: '-azvr --inplace --exclude=".*"'
+          CACHE_CLEAR: "true"
+          SCRIPT: "deploy-scripts/post-deploy.sh"
+
+      - name: Assert action failed (cannot connect with dummy key)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with invalid SSH key, got '$OUTCOME'"
+            exit 1
+          fi
+          echo "PASS: action correctly failed with REMOTE_PATH and SCRIPT inputs and invalid SSH key"
